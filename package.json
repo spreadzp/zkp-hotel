@@ -1,0 +1,42 @@
+{
+  "name": "zk_example_dapp",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "c-ptau": "cd circuits && circom simple_multiplier.circom --r1cs --wasm --sym -o build",
+    "c-build": "cd circuits && snarkjs plonk setup build/simple_multiplier.r1cs ptau/powersOfTau28_hez_final_08.ptau build/proving_key.zkey",
+    "create-contracts": "cd contracts && forge init --no-commit",
+    "create-contract": "snarkjs zkey export solidityverifier circuits/build/proving_key.zkey contracts/src/PlonkVerifier.sol",
+    "contract-build": "forge build",
+    "copy-abi": "cp contracts/out/SimpleMultiplier.sol/SimpleMultiplier.json src/lib/abi/.",
+    "deploy-contracts": "forge script scripts/SimpleMultiplier.s.sol:SimpleMultiplierScript --rpc-url goerli --broadcast --verify -vvvv",
+    "f-test": "cd contracts && forge test --match-path test/Contract.t.sol --match-contract BigTest  --match-test 'testFail*'",
+    "hh-node": "hardhat node",
+    "local-deploy": "cd contracts && forge create scripts/SimpleMultiplier.s.sol:SimpleMultiplier --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.10.6",
+    "@mantine/core": "^6.0.2",
+    "@mantine/hooks": "^6.0.2",
+    "@mantine/notifications": "^6.0.2",
+    "@types/node": "18.15.3",
+    "@types/react": "18.0.28",
+    "@types/react-dom": "18.0.11",
+    "axios": "^1.3.4",
+    "circomlib": "^2.0.5",
+    "eslint": "8.36.0",
+    "eslint-config-next": "13.2.4",
+    "ethers": "^5",
+    "hardhat": "^2.14.0",
+    "next": "13.2.4",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "snarkjs": "^0.6.9",
+    "typescript": "4.9.5",
+    "wagmi": "^0.12.1"
+  }
+}
