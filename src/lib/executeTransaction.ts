@@ -3,11 +3,11 @@ import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { prepareWriteContract, writeContract } from '@wagmi/core';
 
 export const executeTransaction = async (proof: any, publicSignals: Array<string>): Promise<TransactionReceipt> => {
-  const abiPath = require('./abi/SimpleMultiplier.json');
+  const abiPath = require('./abi/RoomAccess.json');
 
   // Prepare the transaction data
   const config = await prepareWriteContract({
-    address: Addresses.SIMPLE_MULTIPLIER_ADDR,
+    address: Addresses.ROOM_ACCESS_ADDR,
     abi: abiPath.abi,
     functionName: 'submitProof',
     args: [proof, publicSignals]

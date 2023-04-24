@@ -1,38 +1,44 @@
-import path from "path";
-// @ts-ignore
-import * as snarkjs from 'snarkjs';
+const { groth16 } = require("snarkjs");
+const circomlibjs = require("circomlibjs");
+const appRoot = require('app-root-path');
+const voter = require(`${appRoot}/voter.json`); 
+const { initiatePoll } = require("./initiatePoll.js");
+const { registerVoter } = require("./registerVoter.js");
 
-export const generateProof = async (input0: number, input1: number): Promise<any> => {
-  console.log(`Generating vote proof with inputs: ${input0}, ${input1}`);
-  
-  // We need to have the naming scheme and shape of the inputs match the .circom file
-  const inputs = {
-    in: [input0, input1],
-  }
-
-  // Paths to the .wasm file and proving key
-  const wasmPath = path.join(process.cwd(), 'circuits/build/simple_multiplier_js/simple_multiplier.wasm');
-  const provingKeyPath = path.join(process.cwd(), 'circuits/build/proving_key.zkey')
-
-  try {
-    // Generate a proof of the circuit and create a structure for the output signals
-    const { proof, publicSignals } = await snarkjs.plonk.fullProve(inputs, wasmPath, provingKeyPath);
-
-    // Convert the data into Solidity calldata that can be sent as a transaction
-    const calldataBlob = await snarkjs.plonk.exportSolidityCallData(proof, publicSignals);
-    const calldata = calldataBlob.split(',');
-
-    console.log(calldata);
-
-    return {
-      proof: calldata[0], 
-      publicSignals: JSON.parse(calldata[1]),
+export const generateProof = async(addr: string) =>{
+    if(voter[addr] == undefined){
+        console.log("Invalid Voter");
+        process.exit(1);
     }
-  } catch (err) {
-    console.log(`Error:`, err)
-    return {
-      proof: "", 
-      publicSignals: [],
-    }
-  }
+    const poseidon = await circomlibjs.buildPoseidonOpt();
+
+    let tree = await initiatePoll();
+    let root = poseidon.F.toString(tree.root);
+    let vid = await registerVoter(root, addr);
+
+
+    let merkleproof = tree.getMerkleProof(voter[addr]);
+    console.log("-------------- Merkle Proof ------------------");
+    merkleproof.lemma = merkleproof.lemma.map((x) => poseidon.F.toString(x));
+    console.log(merkleproof.lemma);
+    
+
+    const { proof, publicSignals } = await groth16.fullProve(
+        {
+            votingID: root,
+            lemma: merkleproof.lemma, 
+            path: merkleproof.circompath,
+            nullifier: vid
+        },
+        `${appRoot}/circuits/build/circuit_js/circuit.wasm`,
+        `${appRoot}/circuits/build/keys/circuit_0000.zkey`
+    );
+    console.log("-------------- Public Signals (pp) ------------------");
+    console.log(publicSignals);
+    console.log("---------------- Proof (pi) ----------------");
+    console.log(proof);
+
+    return { proof, publicSignals };
 }
+
+module.exports = { generateProof };

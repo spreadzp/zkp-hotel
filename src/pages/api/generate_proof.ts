@@ -1,4 +1,4 @@
-import { generateProof } from '@/lib/generateProof';
+import { generateProof } from '@/lib/generateProof-old';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 export default async function handler(
